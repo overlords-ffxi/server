@@ -459,8 +459,8 @@ public:
     }
 
     NodeAABB(const BoundsAABB& aabb)
+    : mBounds(aabb)
     {
-        mBounds            = aabb;
         mLeft              = NULL;
         mRight             = NULL;
         mLeafTriangleIndex = TRI_EOF;
