@@ -29,5 +29,9 @@ bool SightMesh::raycast(const position_t& start, const position_t& end)
     CNavMesh::ToDetourPos(&start, startArr);
     CNavMesh::ToDetourPos(&end, endArr);
 
+    // A small boost
+    startArr[1] += 1.0f;
+    endArr[1] += 1.0f;
+
     return mesh->raycast(startArr, endArr, hitLocation, normal, &hitDistance);
 }
