@@ -26,8 +26,13 @@ bool SightMesh::raycast(const position_t& start, const position_t& end)
     float normal[3];
     float hitDistance;
 
-    CNavMesh::ToDetourPos(&start, startArr);
-    CNavMesh::ToDetourPos(&end, endArr);
+    startArr[0] = start.x;
+    startArr[1] = start.y;
+    startArr[2] = start.z;
+
+    endArr[0] = end.x;
+    endArr[1] = end.y;
+    endArr[2] = end.z;
 
     // A small boost
     startArr[1] += 1.0f;
