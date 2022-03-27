@@ -42,7 +42,16 @@ mission.sections =
             {
                 onTrigger = function(player, npc)
                     if mission:getVar(player, 'Status') == 0 then
-                        return mission:event(570):importantEvent()
+                        return mission:event(131):importantEvent()
+                    end
+                end,
+            },
+
+            ['Parelbriaux'] =
+            {
+                onTrigger = function(player, npc)
+                    if mission:getVar(player, 'Status') == 1 then
+                        return mission:event(137)
                     end
                 end,
             },
@@ -50,13 +59,7 @@ mission.sections =
             onEventFinish =
             {
                 [111] = function(player, csid, option, npc)
-                    mission:setVar(player, 'Status', 2)
-                end,
-
-                [570] = function(player, csid, option, npc)
-                    if option == 1 then
-                        mission:setVar(player, 'Status', 1)
-                    end
+                    mission:setVar(player, 'Status', 1)
                 end,
             },
         },
@@ -68,9 +71,9 @@ mission.sections =
                 onTrigger = function(player, npc)
                     local missionStatus = mission:getVar(player, 'Status')
 
-                    if missionStatus == 2 then
+                    if missionStatus == 1 then
                         return mission:progressEvent(9)
-                    elseif missionStatus > 2 then
+                    elseif missionStatus > 1 then
                         return mission:event(502)
                     end
                 end,
@@ -80,13 +83,13 @@ mission.sections =
             {
                 [9] = function(player, csid, option, npc)
                     if option == 1 then
-                        mission:setVar(player, 'Status', 3)
+                        mission:setVar(player, 'Status', 2)
                         player:setPos(-220.075, -15.999, 79.634, 62, 28)
                     end
                 end,
 
                 [502] = function(player, csid, option, npc)
-                    if option == 1 then
+                    if option == 0 then
                         player:setPos(-220.075, -15.999, 79.634, 62, 28)
                     end
                 end,
@@ -101,9 +104,9 @@ mission.sections =
                     local missionStatus = mission:getVar(player, 'Status')
 
                     if player:getXPos() > 45 then
-                        if missionStatus == 3 then
+                        if missionStatus == 2 then
                             return mission:progressEvent(6, 0, xi.ki.RELIQUIARIUM_KEY)
-                        elseif missionStatus == 5 and player:hasKeyItem(xi.ki.RELIQUIARIUM_KEY) then
+                        elseif missionStatus == 4 and player:hasKeyItem(xi.ki.RELIQUIARIUM_KEY) then
                             return mission:progressEvent(5)
                         end
                     else
@@ -119,7 +122,7 @@ mission.sections =
                     local isSpawnPoint = npc:getLocalVar('hasProfessorMariselle') == 1
 
                     if
-                        missionStatus == 4 and
+                        missionStatus == 3 and
                         not player:hasKeyItem(xi.ki.RELIQUIARIUM_KEY) and
                         isSpawnPoint and
                         npcUtil.popFromQM(player, npc, sacrariumID.mob.OLD_PROFESSOR_MARISELLE, { radius = 2, hide = 0 })
@@ -143,7 +146,7 @@ mission.sections =
             ['Old_Professor_Mariselle'] =
             {
                 onMobDeath = function(mob, player, isKiller, noKiller)
-                    if mission:getVar(player, 'Status') == 4 then
+                    if mission:getVar(player, 'Status') == 3 then
                         mission:setLocalVar(player, 'hasKilled', 1)
                     end
                 end,
@@ -152,11 +155,11 @@ mission.sections =
             onEventFinish =
             {
                 [5] = function(player, csid, option, npc)
-                    mission:setVar(player, 'Status', 4)
+                    mission:complete(player)
                 end,
 
                 [6] = function(player, csid, option, npc)
-                    mission:complete(player)
+                    mission:setVar(player, 'Status', 3)
                 end,
             },
         },
