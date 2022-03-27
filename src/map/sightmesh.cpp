@@ -3,15 +3,16 @@
 #include "navmesh.h"
 
 #include "RaycastMesh.h"
+#include "wavefront.h"
 
 SightMesh::SightMesh(std::string const& filename)
 {
     // Load OBJ
-    //WavefrontObj obj;
-    //obj.loadObj(filename.c_str(), false);
+    WavefrontObj obj;
+    obj.loadObj(filename.c_str(), false);
 
     // Generate RaycastMesh
-    //mesh = RayCastMesh::createRaycastMesh(obj.mVertexCount, obj.mVertices, obj.mTriCount, (const unsigned int*)obj.mIndices));
+    mesh = RayCastMesh::createRaycastMesh(obj.mVertexCount, obj.mVertices, obj.mTriCount, (const unsigned int*)obj.mIndices));
 }
 
 bool SightMesh::raycast(const position_t& start, const position_t& end)

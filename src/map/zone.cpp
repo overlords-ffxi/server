@@ -156,6 +156,12 @@ CZone::CZone(ZONEID ZoneID, REGION_TYPE RegionID, CONTINENT_TYPE ContinentID)
     LoadZoneLines();
     LoadZoneWeather();
     LoadNavMesh();
+
+    // Load SightMesh
+    if (m_zoneID == ZONEID::ZONE_SHIP_BOUND_FOR_MHAURA)
+    {
+        m_sightMesh = std::make_unique<SightMesh>("sightmeshes/Ship_bound_for_Mhaura.obj");
+    }
 }
 
 CZone::~CZone()

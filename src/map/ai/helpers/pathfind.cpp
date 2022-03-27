@@ -485,7 +485,11 @@ bool CPathFind::InWater()
 
 bool CPathFind::CanSeePoint(const position_t& point)
 {
-    return m_PTarget->loc.zone->m_sightMesh->raycast(m_PTarget->loc.p, point);
+    if (return m_PTarget->loc.zone->m_sightMesh)
+    {
+        return m_PTarget->loc.zone->m_sightMesh->raycast(m_PTarget->loc.p, point);
+    }
+    return true;
 }
 
 const position_t& CPathFind::GetDestination() const
