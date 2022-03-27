@@ -82,6 +82,8 @@ set(SOURCES
     region.h
     roe.cpp
     roe.h
+    sightmesh.cpp
+    sightmesh.h
     spell.cpp
     spell.h
     status_effect_container.cpp
@@ -153,6 +155,7 @@ target_link_libraries(topaz_game
     items
     lua_bindings
     packets
+    sightmesh
     utils
     project_options
     PRIVATE

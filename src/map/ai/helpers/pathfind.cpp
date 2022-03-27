@@ -483,14 +483,9 @@ bool CPathFind::InWater()
     return false;
 }
 
-bool CPathFind::CanSeePoint(const position_t& point, bool lookOffMesh)
+bool CPathFind::CanSeePoint(const position_t& point)
 {
-    if (isNavMeshEnabled())
-    {
-        return m_PTarget->loc.zone->m_navMesh->raycast(m_PTarget->loc.p, point, lookOffMesh);
-    }
-
-    return true;
+    return m_PTarget->loc.zone->m_sightMesh->raycast(m_PTarget->loc.p, point);
 }
 
 const position_t& CPathFind::GetDestination() const

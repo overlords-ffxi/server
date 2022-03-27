@@ -36,6 +36,7 @@
 #include "vana_time.h"
 
 #include "navmesh.h"
+#include "sightmesh.h"
 #include "packets/weather.h"
 
 enum ZONEID : uint16
@@ -620,6 +621,7 @@ public:
     CCampaignHandler*    m_CampaignHandler;    // WOTG campaign information for this zone
 
     CNavMesh* m_navMesh; // zones navmesh for finding paths
+    SightMesh* m_sightMesh;
 
 private:
     ZONEID         m_zoneID; // ID зоны
