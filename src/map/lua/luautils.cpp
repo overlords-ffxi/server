@@ -242,6 +242,14 @@ namespace luautils
 
         TracyReportLuaMemory(lua.lua_state());
 
+        // TEST
+        lua.set_function("sight", [](CBaseEntity* a, CBaseEntity* b)
+        {
+            auto* zone = zoneutils::GetZone(a->getZone());
+            bool res = zone->m_sightMesh->raycast(a->loc.p, b->loc.p);
+            ShowInfo("SightMesh: %s -> %s : %s", a->GetName(), b->GetName(), res ? "CAN SEE" : "CANNOT SEE");
+        });
+
         return 0;
     }
 

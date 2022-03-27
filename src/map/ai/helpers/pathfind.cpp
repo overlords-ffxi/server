@@ -485,7 +485,7 @@ bool CPathFind::InWater()
 
 bool CPathFind::CanSeePoint(const position_t& point)
 {
-    if (return m_PTarget->loc.zone->m_sightMesh)
+    if (m_PTarget->loc.zone->m_sightMesh)
     {
         return m_PTarget->loc.zone->m_sightMesh->raycast(m_PTarget->loc.p, point);
     }

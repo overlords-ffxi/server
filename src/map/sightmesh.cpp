@@ -5,6 +5,8 @@
 #include "RaycastMesh.h"
 #include "wavefront.h"
 
+std::unique_ptr<RaycastMesh> mesh;
+
 SightMesh::SightMesh(std::string const& filename)
 {
     // Load OBJ
@@ -12,7 +14,7 @@ SightMesh::SightMesh(std::string const& filename)
     obj.loadObj(filename.c_str(), false);
 
     // Generate RaycastMesh
-    mesh = RayCastMesh::createRaycastMesh(obj.mVertexCount, obj.mVertices, obj.mTriCount, (const unsigned int*)obj.mIndices));
+    mesh = std::make_unique<RaycastMesh>(obj.mVertexCount, obj.mVertices, obj.mTriCount, (const unsigned int*)obj.mIndices);
 }
 
 bool SightMesh::raycast(const position_t& start, const position_t& end)

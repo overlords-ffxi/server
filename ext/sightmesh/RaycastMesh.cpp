@@ -1,11 +1,5 @@
 #include "RaycastMesh.h"
 
-#include <cassert>
-#include <cmath>
-#include <memory>
-#include <vector>
-
-
 // This code snippet allows you to create an axis aligned bounding volume tree for a triangle mesh so that you can do
 // high-speed raycasting.
 //
@@ -34,9 +28,14 @@
 //
 //
 
-#pragma warning(disable : 4100)
+#include <memory>
 
-typedef std::vector<unsigned int> TriVector;
+#include <cassert>
+#include <cmath>
+#include <memory>
+#include <vector>
+
+#pragma warning(disable : 4100)
 
 /**
 *	A method to compute a ray-AABB intersection.
@@ -420,13 +419,6 @@ public:
 
 class NodeAABB;
 
-class NodeInterface
-{
-public:
-    virtual NodeAABB* getNode(void)                                      = 0;
-    virtual void      getFaceNormal(unsigned int tri, float* faceNormal) = 0;
-};
-
 class NodeAABB
 {
 public:
@@ -438,17 +430,17 @@ public:
     }
 
     NodeAABB(unsigned int vcount, const float* vertices, unsigned int tcount, unsigned int* indices,
-             unsigned int   maxDepth,    // Maximum recursion depth for the triangle mesh.
-             unsigned int   minLeafSize, // minimum triangles to treat as a 'leaf' node.
-             float          minAxisSize,
-             NodeInterface* callback,
-             TriVector&     leafTriangles) // once a particular axis is less than this size, stop sub-dividing.
+             unsigned int               maxDepth,    // Maximum recursion depth for the triangle mesh.
+             unsigned int               minLeafSize, // minimum triangles to treat as a 'leaf' node.
+             float                      minAxisSize,
+             NodeInterface*             callback,
+             std::vector<unsigned int>& leafTriangles) // once a particular axis is less than this size, stop sub-dividing.
 
     {
         mLeft              = NULL;
         mRight             = NULL;
         mLeafTriangleIndex = TRI_EOF;
-        TriVector triangles;
+        std::vector<unsigned int> triangles;
         triangles.reserve(tcount);
         for (unsigned int i = 0; i < tcount; i++)
         {
@@ -478,17 +470,17 @@ public:
     }
 
     // here is where we split the mesh..
-    void split(const TriVector&    triangles,
-               unsigned int        vcount,
-               const float*        vertices,
-               unsigned int        tcount,
-               const unsigned int* indices,
-               unsigned int        depth,
-               unsigned int        maxDepth,    // Maximum recursion depth for the triangle mesh.
-               unsigned int        minLeafSize, // minimum triangles to treat as a 'leaf' node.
-               float               minAxisSize,
-               NodeInterface*      callback,
-               TriVector&          leafTriangles) // once a particular axis is less than this size, stop sub-dividing.
+    void split(const std::vector<unsigned int>& triangles,
+               unsigned int                     vcount,
+               const float*                     vertices,
+               unsigned int                     tcount,
+               const unsigned int*              indices,
+               unsigned int                     depth,
+               unsigned int                     maxDepth,    // Maximum recursion depth for the triangle mesh.
+               unsigned int                     minLeafSize, // minimum triangles to treat as a 'leaf' node.
+               float                            minAxisSize,
+               NodeInterface*                   callback,
+               std::vector<unsigned int>&       leafTriangles) // once a particular axis is less than this size, stop sub-dividing.
 
     {
         // Find the longest axis of the bounding volume of this node
@@ -522,7 +514,7 @@ public:
             // Copy the triangle indices into the leaf triangles array
             mLeafTriangleIndex = leafTriangles.size(); // assign the array start location for these leaf triangles.
             leafTriangles.push_back(count);
-            for (TriVector::const_iterator i = triangles.begin(); i != triangles.end(); ++i)
+            for (std::vector<unsigned int>::const_iterator i = triangles.begin(); i != triangles.end(); ++i)
             {
                 unsigned int tri = *i;
                 leafTriangles.push_back(tri);
@@ -539,12 +531,12 @@ public:
 
             BoundsAABB leftBounds, rightBounds;
 
-            TriVector leftTriangles;
-            TriVector rightTriangles;
+            std::vector<unsigned int> leftTriangles;
+            std::vector<unsigned int> rightTriangles;
 
             // Create two arrays; one of all triangles which intersect the 'left' half of the bounding volume node
             // and another array that includes all triangles which intersect the 'right' half of the bounding volume node.
-            for (TriVector::const_iterator i = triangles.begin(); i != triangles.end(); ++i)
+            for (std::vector<unsigned int>::const_iterator i = triangles.begin(); i != triangles.end(); ++i)
             {
                 unsigned int tri = (*i);
 
@@ -644,21 +636,21 @@ public:
         }
     }
 
-    virtual void raycast(bool&               hit,
-                         const float*        from,
-                         const float*        to,
-                         const float*        dir,
-                         float*              hitLocation,
-                         float*              hitNormal,
-                         float*              hitDistance,
-                         const float*        vertices,
-                         const unsigned int* indices,
-                         float&              nearestDistance,
-                         NodeInterface*      callback,
-                         unsigned int*       raycastTriangles,
-                         unsigned int        raycastFrame,
-                         const TriVector&    leafTriangles,
-                         unsigned int&       nearestTriIndex)
+    virtual void raycast(bool&                            hit,
+                         const float*                     from,
+                         const float*                     to,
+                         const float*                     dir,
+                         float*                           hitLocation,
+                         float*                           hitNormal,
+                         float*                           hitDistance,
+                         const float*                     vertices,
+                         const unsigned int*              indices,
+                         float&                           nearestDistance,
+                         NodeInterface*                   callback,
+                         unsigned int*                    raycastTriangles,
+                         unsigned int                     raycastFrame,
+                         const std::vector<unsigned int>& leafTriangles,
+                         unsigned int&                    nearestTriIndex)
     {
         float sect[3];
         float nd = nearestDistance;
@@ -735,181 +727,168 @@ public:
     unsigned int mLeafTriangleIndex; // if it is a leaf node; then these are the triangle indices.
 };
 
-class MyRaycastMesh : public RaycastMesh, public NodeInterface
+RaycastMesh::RaycastMesh(unsigned int vcount, const float* vertices, unsigned int tcount, const unsigned int* indices, unsigned int maxDepth, unsigned int minLeafSize, float minAxisSize)
 {
-public:
-    MyRaycastMesh(unsigned int vcount, const float* vertices, unsigned int tcount, const unsigned int* indices, unsigned int maxDepth, unsigned int minLeafSize, float minAxisSize)
+    mRaycastFrame = 0;
+
+    if (maxDepth < 2)
     {
-        mRaycastFrame = 0;
-        if (maxDepth < 2)
+        maxDepth = 2;
+    }
+
+    if (maxDepth > 15)
+    {
+        maxDepth = 15;
+    }
+    unsigned int pow2Table[16] = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 65536 };
+    mMaxNodeCount              = 0;
+    for (unsigned int i = 0; i <= maxDepth; i++)
+    {
+        mMaxNodeCount += pow2Table[i];
+    }
+    mNodes     = new NodeAABB[mMaxNodeCount];
+    mNodeCount = 0;
+    mVcount    = vcount;
+    mVertices  = (float*)::malloc(sizeof(float) * 3 * vcount);
+    memcpy(mVertices, vertices, sizeof(float) * 3 * vcount);
+    mTcount  = tcount;
+    mIndices = (unsigned int*)::malloc(sizeof(unsigned int) * tcount * 3);
+    memcpy(mIndices, indices, sizeof(unsigned int) * tcount * 3);
+    mRaycastTriangles = (unsigned int*)::malloc(tcount * sizeof(unsigned int));
+    memset(mRaycastTriangles, 0, tcount * sizeof(unsigned int));
+    mRoot        = getNode();
+    mFaceNormals = NULL;
+    new (mRoot) NodeAABB(mVcount, mVertices, mTcount, mIndices, maxDepth, minLeafSize, minAxisSize, this, mLeafTriangles);
+}
+
+RaycastMesh::~RaycastMesh(void)
+{
+    delete[] mNodes;
+    ::free(mVertices);
+    ::free(mIndices);
+    ::free(mFaceNormals);
+    ::free(mRaycastTriangles);
+}
+
+bool RaycastMesh::raycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance)
+{
+    bool ret = false;
+
+    float dir[3];
+    dir[0]         = to[0] - from[0];
+    dir[1]         = to[1] - from[1];
+    dir[2]         = to[2] - from[2];
+    float distance = sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+    if (distance < 0.0000000001f)
+        return false;
+    float recipDistance = 1.0f / distance;
+    dir[0] *= recipDistance;
+    dir[1] *= recipDistance;
+    dir[2] *= recipDistance;
+    mRaycastFrame++;
+    unsigned int nearestTriIndex = TRI_EOF;
+    mRoot->raycast(ret, from, to, dir, hitLocation, hitNormal, hitDistance, mVertices, mIndices, distance, this, mRaycastTriangles, mRaycastFrame, mLeafTriangles, nearestTriIndex);
+    return ret;
+}
+
+const float* RaycastMesh::getBoundMin(void) const // return the minimum bounding box
+{
+    return mRoot->mBounds.mMin;
+}
+
+const float* RaycastMesh::getBoundMax(void) const // return the maximum bounding box.
+{
+    return mRoot->mBounds.mMax;
+}
+
+NodeAABB* RaycastMesh::getNode(void)
+{
+    assert(mNodeCount < mMaxNodeCount);
+    NodeAABB* ret = &mNodes[mNodeCount];
+    mNodeCount++;
+    return ret;
+}
+
+void RaycastMesh::getFaceNormal(unsigned int tri, float* faceNormal)
+{
+    if (mFaceNormals == NULL)
+    {
+        mFaceNormals = (float*)::malloc(sizeof(float) * 3 * mTcount);
+        for (unsigned int i = 0; i < mTcount; i++)
         {
-            maxDepth = 2;
+            unsigned int i1   = mIndices[i * 3 + 0];
+            unsigned int i2   = mIndices[i * 3 + 1];
+            unsigned int i3   = mIndices[i * 3 + 2];
+            const float* p1   = &mVertices[i1 * 3];
+            const float* p2   = &mVertices[i2 * 3];
+            const float* p3   = &mVertices[i3 * 3];
+            float*       dest = &mFaceNormals[i * 3];
+            computePlane(p3, p2, p1, dest);
         }
-        if (maxDepth > 15)
+    }
+    const float* src = &mFaceNormals[tri * 3];
+    faceNormal[0]    = src[0];
+    faceNormal[1]    = src[1];
+    faceNormal[2]    = src[2];
+}
+
+bool RaycastMesh::bruteForceRaycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance)
+{
+    bool ret = false;
+
+    float dir[3];
+
+    dir[0] = to[0] - from[0];
+    dir[1] = to[1] - from[1];
+    dir[2] = to[2] - from[2];
+
+    float distance = sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+    if (distance < 0.0000000001f)
+        return false;
+
+    float recipDistance = 1.0f / distance;
+    dir[0] *= recipDistance;
+    dir[1] *= recipDistance;
+    dir[2] *= recipDistance;
+    const unsigned int* indices         = mIndices;
+    const float*        vertices        = mVertices;
+    float               nearestDistance = distance;
+
+    for (unsigned int tri = 0; tri < mTcount; tri++)
+    {
+        unsigned int i1 = indices[tri * 3 + 0];
+        unsigned int i2 = indices[tri * 3 + 1];
+        unsigned int i3 = indices[tri * 3 + 2];
+
+        const float* p1 = &vertices[i1 * 3];
+        const float* p2 = &vertices[i2 * 3];
+        const float* p3 = &vertices[i3 * 3];
+
+        float t;
+        if (rayIntersectsTriangle(from, dir, p1, p2, p3, t))
         {
-            maxDepth = 15;
-        }
-        unsigned int pow2Table[16] = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 65536 };
-        mMaxNodeCount              = 0;
-        for (unsigned int i = 0; i <= maxDepth; i++)
-        {
-            mMaxNodeCount += pow2Table[i];
-        }
-        mNodes     = new NodeAABB[mMaxNodeCount];
-        mNodeCount = 0;
-        mVcount    = vcount;
-        mVertices  = (float*)::malloc(sizeof(float) * 3 * vcount);
-        memcpy(mVertices, vertices, sizeof(float) * 3 * vcount);
-        mTcount  = tcount;
-        mIndices = (unsigned int*)::malloc(sizeof(unsigned int) * tcount * 3);
-        memcpy(mIndices, indices, sizeof(unsigned int) * tcount * 3);
-        mRaycastTriangles = (unsigned int*)::malloc(tcount * sizeof(unsigned int));
-        memset(mRaycastTriangles, 0, tcount * sizeof(unsigned int));
-        mRoot        = getNode();
-        mFaceNormals = NULL;
-        new (mRoot) NodeAABB(mVcount, mVertices, mTcount, mIndices, maxDepth, minLeafSize, minAxisSize, this, mLeafTriangles);
-    }
-
-    ~MyRaycastMesh(void)
-    {
-        delete[] mNodes;
-        ::free(mVertices);
-        ::free(mIndices);
-        ::free(mFaceNormals);
-        ::free(mRaycastTriangles);
-    }
-
-    virtual bool raycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance)
-    {
-        bool ret = false;
-
-        float dir[3];
-        dir[0]         = to[0] - from[0];
-        dir[1]         = to[1] - from[1];
-        dir[2]         = to[2] - from[2];
-        float distance = sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
-        if (distance < 0.0000000001f)
-            return false;
-        float recipDistance = 1.0f / distance;
-        dir[0] *= recipDistance;
-        dir[1] *= recipDistance;
-        dir[2] *= recipDistance;
-        mRaycastFrame++;
-        unsigned int nearestTriIndex = TRI_EOF;
-        mRoot->raycast(ret, from, to, dir, hitLocation, hitNormal, hitDistance, mVertices, mIndices, distance, this, mRaycastTriangles, mRaycastFrame, mLeafTriangles, nearestTriIndex);
-        return ret;
-    }
-
-    virtual const float* getBoundMin(void) const // return the minimum bounding box
-    {
-        return mRoot->mBounds.mMin;
-    }
-    virtual const float* getBoundMax(void) const // return the maximum bounding box.
-    {
-        return mRoot->mBounds.mMax;
-    }
-
-    virtual NodeAABB* getNode(void)
-    {
-        assert(mNodeCount < mMaxNodeCount);
-        NodeAABB* ret = &mNodes[mNodeCount];
-        mNodeCount++;
-        return ret;
-    }
-
-    virtual void getFaceNormal(unsigned int tri, float* faceNormal)
-    {
-        if (mFaceNormals == NULL)
-        {
-            mFaceNormals = (float*)::malloc(sizeof(float) * 3 * mTcount);
-            for (unsigned int i = 0; i < mTcount; i++)
+            if (t < nearestDistance)
             {
-                unsigned int i1   = mIndices[i * 3 + 0];
-                unsigned int i2   = mIndices[i * 3 + 1];
-                unsigned int i3   = mIndices[i * 3 + 2];
-                const float* p1   = &mVertices[i1 * 3];
-                const float* p2   = &mVertices[i2 * 3];
-                const float* p3   = &mVertices[i3 * 3];
-                float*       dest = &mFaceNormals[i * 3];
-                computePlane(p3, p2, p1, dest);
-            }
-        }
-        const float* src = &mFaceNormals[tri * 3];
-        faceNormal[0]    = src[0];
-        faceNormal[1]    = src[1];
-        faceNormal[2]    = src[2];
-    }
-
-    virtual bool bruteForceRaycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance)
-    {
-        bool ret = false;
-
-        float dir[3];
-
-        dir[0] = to[0] - from[0];
-        dir[1] = to[1] - from[1];
-        dir[2] = to[2] - from[2];
-
-        float distance = sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
-        if (distance < 0.0000000001f)
-            return false;
-        float recipDistance = 1.0f / distance;
-        dir[0] *= recipDistance;
-        dir[1] *= recipDistance;
-        dir[2] *= recipDistance;
-        const unsigned int* indices         = mIndices;
-        const float*        vertices        = mVertices;
-        float               nearestDistance = distance;
-
-        for (unsigned int tri = 0; tri < mTcount; tri++)
-        {
-            unsigned int i1 = indices[tri * 3 + 0];
-            unsigned int i2 = indices[tri * 3 + 1];
-            unsigned int i3 = indices[tri * 3 + 2];
-
-            const float* p1 = &vertices[i1 * 3];
-            const float* p2 = &vertices[i2 * 3];
-            const float* p3 = &vertices[i3 * 3];
-
-            float t;
-            if (rayIntersectsTriangle(from, dir, p1, p2, p3, t))
-            {
-                if (t < nearestDistance)
+                nearestDistance = t;
+                if (hitLocation)
                 {
-                    nearestDistance = t;
-                    if (hitLocation)
-                    {
-                        hitLocation[0] = from[0] + dir[0] * t;
-                        hitLocation[1] = from[1] + dir[1] * t;
-                        hitLocation[2] = from[2] + dir[2] * t;
-                    }
-
-                    if (hitNormal)
-                    {
-                        getFaceNormal(tri, hitNormal);
-                    }
-
-                    if (hitDistance)
-                    {
-                        *hitDistance = t;
-                    }
-                    ret = true;
+                    hitLocation[0] = from[0] + dir[0] * t;
+                    hitLocation[1] = from[1] + dir[1] * t;
+                    hitLocation[2] = from[2] + dir[2] * t;
                 }
+
+                if (hitNormal)
+                {
+                    getFaceNormal(tri, hitNormal);
+                }
+
+                if (hitDistance)
+                {
+                    *hitDistance = t;
+                }
+                ret = true;
             }
         }
-        return ret;
     }
-
-    unsigned int  mRaycastFrame;
-    unsigned int* mRaycastTriangles;
-    unsigned int  mVcount;
-    float*        mVertices;
-    float*        mFaceNormals;
-    unsigned int  mTcount;
-    unsigned int* mIndices;
-    NodeAABB*     mRoot;
-    unsigned int  mNodeCount;
-    unsigned int  mMaxNodeCount;
-    NodeAABB*     mNodes;
-    TriVector     mLeafTriangles;
-};
+    return ret;
+}

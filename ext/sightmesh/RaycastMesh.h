@@ -29,26 +29,52 @@
 //
 //
 
-#include <memory>
+#include <vector>
 
-class RaycastMesh
+class NodeAABB;
+
+class NodeInterface
 {
 public:
-    virtual ~RaycastMesh(void){};
-
-    virtual bool raycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance)           = 0;
-    virtual bool bruteForceRaycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance) = 0;
-
-    virtual const float* getBoundMin(void) const = 0; // return the minimum bounding box
-    virtual const float* getBoundMax(void) const = 0; // return the maximum bounding box.
-
-    static std::unique_ptr<RaycastMesh> createRaycastMesh(unsigned int        vcount,             // The number of vertices in the source triangle mesh
-                                                          const float*        vertices,           // The array of vertex positions in the format x1,y1,z1..x2,y2,z2.. etc.
-                                                          unsigned int        tcount,             // The number of triangles in the source triangle mesh
-                                                          const unsigned int* indices,            // The triangle indices in the format of i1,i2,i3 ... i4,i5,i6, ...
-                                                          unsigned int        maxDepth    = 15,   // Maximum recursion depth for the triangle mesh.
-                                                          unsigned int        minLeafSize = 4,    // minimum triangles to treat as a 'leaf' node.
-                                                          float               minAxisSize = 0.01f // once a particular axis is less than this size, stop sub-dividing.
-    );
+    virtual NodeAABB* getNode(void)                                      = 0;
+    virtual void      getFaceNormal(unsigned int tri, float* faceNormal) = 0;
 };
+
+class RaycastMesh : public NodeInterface
+{
+public:
+    RaycastMesh(unsigned int        vcount,            // The number of vertices in the source triangle mesh
+                const float*        vertices,          // The array of vertex positions in the format x1,y1,z1..x2,y2,z2.. etc.
+                unsigned int        tcount,            // The number of triangles in the source triangle mesh
+                const unsigned int* indices,           // The triangle indices in the format of i1,i2,i3 ... i4,i5,i6, ...
+                unsigned int        maxDepth    = 15,  // Maximum recursion depth for the triangle mesh.
+                unsigned int        minLeafSize = 4,   // minimum triangles to treat as a 'leaf' node.
+                float               minAxisSize = 0.1f // once a particular axis is less than this size, stop sub-dividing.
+    );
+
+    virtual ~RaycastMesh();
+
+    bool raycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance);
+    bool bruteForceRaycast(const float* from, const float* to, float* hitLocation, float* hitNormal, float* hitDistance);
+
+    const float* getBoundMin(void) const; // return the minimum bounding box
+    const float* getBoundMax(void) const; // return the maximum bounding box.
+
+    NodeAABB* getNode(void);
+    void      getFaceNormal(unsigned int tri, float* faceNormal);
+
+    unsigned int              mRaycastFrame;
+    unsigned int*             mRaycastTriangles;
+    unsigned int              mVcount;
+    float*                    mVertices;
+    float*                    mFaceNormals;
+    unsigned int              mTcount;
+    unsigned int*             mIndices;
+    NodeAABB*                 mRoot;
+    unsigned int              mNodeCount;
+    unsigned int              mMaxNodeCount;
+    NodeAABB*                 mNodes;
+    std::vector<unsigned int> mLeafTriangles;
+};
+
 #endif // RAYCAST_MESH_H
