@@ -38,5 +38,11 @@ bool SightMesh::raycast(const position_t& start, const position_t& end)
     startArr[1] += 1.0f;
     endArr[1] += 1.0f;
 
-    return mesh->raycast(startArr, endArr, hitLocation, normal, &hitDistance);
+    bool result = mesh->raycast(startArr, endArr, hitLocation, normal, &hitDistance);
+
+    endArr[0] = hitLocation[0];
+    endArr[1] = hitLocation[1];
+    endArr[2] = hitLocation[2];
+
+    return result;
 }
