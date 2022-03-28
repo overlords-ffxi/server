@@ -26,13 +26,8 @@ bool SightMesh::raycast(const position_t& start, const position_t& end)
     float normal[3];
     float hitDistance;
 
-    startArr[0] = start.x;
-    startArr[1] = start.y;
-    startArr[2] = start.z;
-
-    endArr[0] = end.x;
-    endArr[1] = end.y;
-    endArr[2] = end.z;
+    CNavMesh::ToDetourPos(&start, startArr);
+    CNavMesh::ToDetourPos(&end, endArr);
 
     // A small boost
     startArr[1] += 1.0f;
@@ -40,9 +35,13 @@ bool SightMesh::raycast(const position_t& start, const position_t& end)
 
     bool result = mesh->raycast(startArr, endArr, hitLocation, normal, &hitDistance);
 
-    endArr[0] = hitLocation[0];
-    endArr[1] = hitLocation[1];
-    endArr[2] = hitLocation[2];
+    // Move result back to FFXI space
+    CNavMesh::ToFFXISpace(hitLocation);
+
+    // Move the target
+    end->x = hitLocation[0];
+    end->y = hitLocation[1];
+    end->z = hitLocation[2];
 
     return result;
 }
