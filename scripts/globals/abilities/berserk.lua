@@ -6,7 +6,10 @@ require("scripts/globals/job_utils/warrior")
 -----------------------------------
 local abilityObject = {}
 
-abilityObject.onAbilityCheck = function(player, target, ability)
+ability_object.onAbilityCheck = function(player, target, ability)
+  if (WarAdv == xi.WarAdv.SHOUTER) and (player:getMainJob() == xi.job.WAR) then
+        ability:setRecast(60)
+      end
     return 0, 0
 end
 

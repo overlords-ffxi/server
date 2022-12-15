@@ -15,28 +15,41 @@ require("scripts/globals/status")
 require("scripts/globals/settings")
 require("scripts/globals/weaponskills")
 -----------------------------------
-local weaponskillObject = {}
+local weaponskill_object = {}
 
-weaponskillObject.onUseWeaponSkill = function(player, target, wsID, tp, primary, action, taChar)
+weaponskill_object.onUseWeaponSkill = function(player, target, wsID, tp, primary, action, taChar)
+
     local params = {}
     params.numHits = 1
     params.ftp100 = 1 params.ftp200 = 1 params.ftp300 = 1
     params.str_wsc = 0.3 params.dex_wsc = 0.0 params.vit_wsc = 0.0 params.agi_wsc = 0.0 params.int_wsc = 0.0 params.mnd_wsc = 0.0 params.chr_wsc = 0.0
     params.crit100 = 0.0 params.crit200 = 0.0 params.crit300 = 0.0
     params.canCrit = false
-    params.acc100 = 0.0 params.acc200 = 0.0 params.acc300 = 0.0
+    params.acc100 = 0.0 params.acc200= 0.0 params.acc300= 0.0
     params.atk100 = 1; params.atk200 = 1; params.atk300 = 1
     local damage, criticalHit, tpHits, extraHits = doPhysicalWeaponskill(player, target, wsID, params, tp, action, primary, taChar)
 
-    if xi.settings.main.USE_ADOULIN_WEAPON_SKILL_CHANGES then
+    if (xi.settings.main.USE_ADOULIN_WEAPON_SKILL_CHANGES == true) then
         params.str_wsc = 1.0
     end
 
-    if damage > 0 and not target:hasStatusEffect(xi.effect.INT_DOWN) then
+    local WarAdv = player:getCharVar("WarAdv")
+    local WarJob = (player:getMainJob() == xi.job.WAR)
+      if (WarAdv == xi.WarAdv.GLADIATOR) and WarJob then
+        params.numHits = 1
+        params.ftp100 = 4 params.ftp200 = 6 params.ftp300 = 8
+        params.str_wsc = 0.3 params.dex_wsc = 0.0 params.vit_wsc = 0.0 params.agi_wsc = 0.0 params.int_wsc = 0.0 params.mnd_wsc = 0.0 params.chr_wsc = 0.0
+        params.crit100 = 0.0 params.crit200 = 0.0 params.crit300 = 0.0
+        params.canCrit = true
+        params.acc100 = 0.0 params.acc200= 0.0 params.acc300= 0.0
+        params.atk100 = 1.2; params.atk200 = 1.3; params.atk300 = 1.4
+      end
+
+    if (damage > 0 and target:hasStatusEffect(xi.effect.INT_DOWN) == false) then
         target:addStatusEffect(xi.effect.INT_DOWN, 10, 0, 140)
     end
-
     return tpHits, extraHits, criticalHit, damage
+
 end
 
-return weaponskillObject
+return weaponskill_object

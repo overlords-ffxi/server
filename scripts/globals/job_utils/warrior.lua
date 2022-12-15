@@ -4,6 +4,7 @@
 require('scripts/globals/items')
 require("scripts/globals/settings")
 require("scripts/globals/status")
+require("scripts/globals/advjobs")
 -----------------------------------
 xi = xi or {}
 xi.job_utils = xi.job_utils or {}
@@ -36,15 +37,39 @@ end
 -- Ability Use Functions
 -----------------------------------
 xi.job_utils.warrior.useAggressor = function(player, target, ability)
+    local WarAdv = player:getCharVar("WarAdv")
+    local WarJob = (player:getMainJob() == xi.job.WAR)
     local merits = player:getMerit(xi.merit.AGGRESSIVE_AIM)
-
-    player:addStatusEffect(xi.effect.AGGRESSOR, merits, 0, 180 + player:getMod(xi.mod.AGGRESSOR_DURATION))
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob and player:hasStatusEffect(xi.effect.DEFENDER) then
+        player:delStatusEffect(xi.effect.DEFENDER)
+    end
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob and player:hasStatusEffect(xi.effect.BERSERK) then
+        player:delStatusEffect(xi.effect.BERSERK)
+    end
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob then
+        player:addStatusEffect(xi.effect.AGGRESSOR, merits, 0, 60 + player:getMod(xi.mod.AGGRESSOR_DURATION))
+    else
+        player:addStatusEffect(xi.effect.AGGRESSOR, merits, 0, 180 + player:getMod(xi.mod.AGGRESSOR_DURATION))
+    end
 end
 
 xi.job_utils.warrior.useBerserk = function(player, target, ability)
-    player:addStatusEffect(xi.effect.BERSERK, 25 + player:getMod(xi.mod.BERSERK_POTENCY), 0, 180 + player:getMod(xi.mod.BERSERK_DURATION))
+    local WarAdv = player:getCharVar("WarAdv")
+    local WarJob = (player:getMainJob() == xi.job.WAR)
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob and player:hasStatusEffect(xi.effect.DEFENDER) then
+        player:delStatusEffect(xi.effect.DEFENDER)
+    end
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob and player:hasStatusEffect(xi.effect.AGGRESSOR) then
+        player:delStatusEffect(xi.effect.AGGRESSOR)
+    end
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob then
+        player:addStatusEffect(xi.effect.BERSERK, 15 + player:getMod(xi.mod.BERSERK_EFFECT), 0, 60 + player:getMod(xi.mod.BERSERK_DURATION))
+    elseif (WarAdv == xi.WarAdv.BERSERKER) and WarJob then
+        player:addStatusEffect(xi.effect.BERSERK, 35 + player:getMod(xi.mod.BERSERK_EFFECT), 0, 3600 + player:getMod(xi.mod.BERSERK_DURATION))
+    else
+        player:addStatusEffect(xi.effect.BERSERK, 25 + player:getMod(xi.mod.BERSERK_EFFECT), 0, 180 + player:getMod(xi.mod.BERSERK_DURATION))
+    end
 end
-
 xi.job_utils.warrior.useBloodRage = function(player, target, ability)
     local power    = 20 + player:getJobPointLevel(xi.jp.BLOOD_RAGE_EFFECT)
     local duration = 30 + player:getMod(xi.mod.ENHANCES_BLOOD_RAGE)
@@ -63,7 +88,21 @@ xi.job_utils.warrior.useBrazenRush = function(player, target, ability)
 end
 
 xi.job_utils.warrior.useDefender = function(player, target, ability)
-    player:addStatusEffect(xi.effect.DEFENDER, 1, 0, 180 + player:getMod(xi.mod.DEFENDER_DURATION))
+    local WarAdv = player:getCharVar("WarAdv")
+    local WarJob = (player:getMainJob() == xi.job.WAR)
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob and player:hasStatusEffect(xi.effect.BERSERK) then
+        player:delStatusEffect(xi.effect.BERSERK)
+    end
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob and player:hasStatusEffect(xi.effect.AGGRESSOR) then
+        player:delStatusEffect(xi.effect.AGGRESSOR)
+    end
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob then
+        player:addStatusEffect(xi.effect.DEFENDER, 1, 0, 60 + player:getMod(xi.mod.DEFENDER_DURATION))
+    elseif (WarAdv == xi.WarAdv.GLADIATOR) and WarJob then
+        player:addStatusEffect(xi.effect.DEFENDER, 1, 0, 3600)
+    else
+        player:addStatusEffect(xi.effect.DEFENDER, 1, 0, 180 + player:getMod(xi.mod.DEFENDER_DURATION))
+    end
 end
 
 xi.job_utils.warrior.useMightyStrikes = function(player, target, ability)
@@ -90,6 +129,8 @@ xi.job_utils.warrior.useWarcry = function(player, target, ability)
     local merit    = player:getMerit(xi.merit.SAVAGERY)
     local power    = 0
     local duration = 30
+    local WarAdv = player:getCharVar("WarAdv")
+    local WarJob = (player:getMainJob() == xi.job.WAR)
 
     if player:getMainJob() == xi.job.WAR then
         power = math.floor((player:getMainLvl() / 4) + 4.75) / 256
@@ -99,18 +140,30 @@ xi.job_utils.warrior.useWarcry = function(player, target, ability)
 
     power    = power * 100
     duration = duration + player:getMod(xi.mod.WARCRY_DURATION)
-
-    target:addStatusEffect(xi.effect.WARCRY, power, 0, duration, 0, merit)
-
-    if player:getID() ~= target:getID() then
-        ability:setMsg(xi.msg.basic.JA_ATK_ENHANCED)
+    if (WarAdv == xi.WarAdv.SHOUTER) and WarJob then
+        if player:hasStatusEffect(xi.effect.BERSERK) then
+            target:addStatusEffect(xi.effect.ATTACK_BOOST, 10, 0, 60 + player:getMod(xi.mod.WARCRY_DURATION))
+            target:addStatusEffect(xi.effect.REGAIN, 1, 0, 10)
+            target:addStatusEffect(xi.effect.WARCRY, power, 0, duration, 0, merit)
+        elseif player:hasStatusEffect(xi.effect.DEFENDER) then
+            target:addStatusEffect(xi.effect.DEFENSE_BOOST, 10, 0, 60 + player:getMod(xi.mod.WARCRY_DURATION))
+            target:addStatusEffect(xi.effect.MAX_HP_BOOST, 15, 0, 60 + player:getMod(xi.mod.WARCRY_DURATION))
+            target:addStatusEffect(xi.effect.WARCRY, power, 0, duration, 0, merit)
+            target:setHP(target:getHP() + math.floor(target:getMaxHP() * 0.15))
+        elseif player:hasStatusEffect(xi.effect.AGGRESSOR) then
+            target:addStatusEffect(xi.effect.ACCURACY_BOOST, 10, 0, 60 + player:getMod(xi.mod.WARCRY_DURATION))
+            --target:addStatusEffect(xi.effect.RAMUHS_FAVOR, 5, 0, 60 + player:getMod(xi.mod.WARCRY_DURATION))
+            target:addStatusEffect(xi.effect.WARCRY, power, 0, duration, 0, merit)
+        end
+    elseif (WarAdv == xi.WarAdv.BERSERKER) and WarJob then
+        target:addStatusEffect(xi.effect.WARCRY, power, 0, 30 + duration, 0, merit)
+        --target:addStatusEffect(xi.effect.STORETP, 25, 0, 30 + duration )
+    else
+        target:addStatusEffect(xi.effect.WARCRY, power, 0, duration, 0, merit)
     end
-
-    return xi.effect.WARCRY
 end
 
 xi.job_utils.warrior.useWarriorsCharge = function(player, target, ability)
     local merits = player:getMerit(xi.merit.WARRIORS_CHARGE)
-
     player:addStatusEffect(xi.effect.WARRIORS_CHARGE, merits - 5, 0, 60)
 end

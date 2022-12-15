@@ -16,24 +16,30 @@ require("scripts/globals/status")
 require("scripts/globals/settings")
 require("scripts/globals/weaponskills")
 -----------------------------------
-local weaponskillObject = {}
+local weaponskill_object = {}
 
-weaponskillObject.onUseWeaponSkill = function(player, target, wsID, tp, primary, action, taChar)
+weaponskill_object.onUseWeaponSkill = function(player, target, wsID, tp, primary, action, taChar)
+
     local params = {}
     params.numHits = 1
     params.ftp100 = 1 params.ftp200 = 1 params.ftp300 = 1
     params.str_wsc = 0.5 params.dex_wsc = 0.0 params.vit_wsc = 0.0 params.agi_wsc = 0.0 params.int_wsc = 0.0 params.mnd_wsc = 0.0 params.chr_wsc = 0.0
     params.crit100 = 1.0 params.crit200 = 1.0 params.crit300 = 1.0
     params.canCrit = true
-    params.acc100 = 0.5 params.acc200 = 0.7 params.acc300 = 1 -- TODO: verify -- "Accuracy varies with TP" in retail. All current evidence points to that this modifier is static values, not percentages.
+    params.acc100 = 0.5 params.acc200= 0.7 params.acc300= 1
     params.atk100 = 2; params.atk200 = 2; params.atk300 = 2
 
-    if xi.settings.main.USE_ADOULIN_WEAPON_SKILL_CHANGES then
+    if (xi.settings.main.USE_ADOULIN_WEAPON_SKILL_CHANGES == true) then
         params.str_wsc = 1.0
     end
 
     local damage, criticalHit, tpHits, extraHits = doPhysicalWeaponskill(player, target, wsID, params, tp, action, primary, taChar)
+    if player:getMainJob() == xi.job.WAR and (player:getCharVar("WarAdv") == xi.WarAdv.GLADIATOR) then
+      if (damage > 0 and target:hasStatusEffect(xi.effect.CRIT_HIT_EVASION_DOWN) == false) then
+          target:addStatusEffect(xi.effect.CRIT_HIT_EVASION_DOWN, 10, 0, 60)
+      end
+    end
     return tpHits, extraHits, criticalHit, damage
 end
 
-return weaponskillObject
+return weaponskill_object
